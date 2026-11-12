@@ -1,0 +1,6 @@
+{
+  "name": "Watch Ads & Earn - Daily Earning Platform",
+  "description": "Watch ads daily to earn real rewards, grow your 3-level referral team, and withdraw via JazzCash or Easypaisa with full admin management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Watch Ads &amp; Earn</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{background:#050505;color:#f5f5f5;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+body{background:radial-gradient(900px 500px at 15% -5%,rgba(234,179,8,.16),transparent 60%),#050505;min-height:100vh}
+.glass{background:rgba(255,255,255,.04);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.09);border-radius:1.25rem}
+.gold{background:linear-gradient(90deg,#fde047,#eab308,#f59e0b);-webkit-background-clip:text;background-clip:text;color:transparent}
+.btn{background:linear-gradient(135deg,#fde047,#eab308 55%,#ca8a04);color:#111;font-weight:700;border-radius:999px;box-shadow:0 0 26px rgba(234,179,8,.4);transition:.25s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 0 42px rgba(234,179,8,.7)}.btn:disabled{filter:grayscale(1);opacity:.45;box-shadow:none;cursor:not-allowed;transform:none}
+.inp{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:.8rem;padding:.8rem 1rem;color:#fff;outline:none}.inp:focus{border-color:#eab308}.inp option{background:#111}
+.view{display:none;animation:f .3s}.view.on{display:block}@keyframes f{from{opacity:0;transform:translateY(8px)}}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;padding:1rem;z-index:60}.modal.on{display:flex}
+.navl{color:#a3a3a3}.navl.act{color:#eab308}
+</style>
+</head>
+<body>
+<header class="sticky top-0 z-40"><div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between glass !rounded-none !border-x-0 !border-t-0">
+ <b class="text-lg"><i class="fa-solid fa-bolt text-yellow-500"></i> Watch Ads <span class="gold">&amp; Earn</span></b>
+ <nav id="nav" class="hidden md:flex gap-5 text-sm">
+  <a class="navl" data-v="dash" href="#" onclick="go('dash');return false">Dashboard</a><a class="navl" data-v="ads" href="#" onclick="go('ads');return false">Watch Ads</a><a class="navl" data-v="team" href="#" onclick="go('team');return false">Referrals</a><a class="navl" data-v="wd" href="#" onclick="go('wd');return false">Withdraw</a><a class="navl" data-v="hist" href="#" onclick="go('hist');return false">History</a>
+ </nav>
+ <button id="out" onclick="logout()" class="hidden text-sm px-3 py-1.5 rounded-full border border-white/15">Logout</button>
+</div></header>
+
+<main class="max-w-5xl mx-auto px-4 pt-6 pb-28">
+<!-- AUTH -->
+<section id="auth" class="view on"><div class="max-w-md mx-auto glass p-7 mt-6">
+ <h1 class="text-2xl font-extrabold">Watch Ads. <span class="gold">Earn Money.</span></h1>
+ <p class="text-sm text-neutral-400 mb-5">Watch 10 ads daily, earn Rs. 4.50 per ad and grow with your team.</p>
+ <div class="flex gap-2 mb-4 text-sm"><button id="tL" onclick="mode('l')" class="flex-1 py-2 rounded-full btn">Login</button><button id="tR" onclick="mode('r')" class="flex-1 py-2 rounded-full border border-white/15">Register</button></div>
+ <div class="space-y-3">
+  <input id="aName" class="inp hidden" placeholder="Full name">
+  <input id="aMail" type="email" class="inp" placeholder="Email">
+  <input id="aPass" type="password" class="inp" placeholder="Password (min 6 characters)">
+  <input id="aRef" class="inp hidden" placeholder="Referral code (optional)">
+  <div id="warn" class="hidden rounded-xl border border-red-500/40 bg-red-500/10 text-red-300 text-sm p-3">An account has already been registered from this device or network. Only one account is allowed per device/IP.</div>
+  <label id="tick" class="hidden text-sm text-neutral-400 items-start gap-2"><input id="aTerms" type="checkbox" class="mt-1 accent-yellow-500"><span>I agree to the <a href="#" class="text-yellow-500" onclick="openM('terms');return false">Terms &amp; Privacy Policy</a>.</span></label>
+  <button id="aGo" onclick="submitAuth()" class="btn w-full py-3">Login</button>
+ </div></div></section>
+
+<!-- DASH -->
+<section id="dash" class="view">
+ <div class="flex flex-wrap justify-between gap-2 mb-4"><h2 class="text-2xl font-extrabold">Welcome, <span class="gold" id="dName"></span></h2><span class="glass px-4 py-1.5 text-sm">User ID: <b class="text-yellow-500" id="dId"></b></span></div>
+ <div class="glass p-7 mb-4" style="box-shadow:0 0 50px rgba(234,179,8,.15) inset"><p class="text-sm text-neutral-300">Total Balance</p><p class="text-5xl font-black gold" id="dBal"></p></div>
+ <div class="grid md:grid-cols-3 gap-4 mb-4">
+  <div class="glass p-5"><p class="text-sm text-neutral-400">Ads Today</p><p class="text-2xl font-bold my-1"><span id="dTd"></span> / 10</p><div class="h-2 rounded-full bg-white/10"><div id="dBar" class="h-full rounded-full bg-yellow-500" style="width:0"></div></div></div>
+  <div class="glass p-5"><p class="text-sm text-neutral-400">Reward Per Ad</p><p class="text-2xl font-bold mt-1">Rs. 4.50</p></div>
+  <div class="glass p-5"><p class="text-sm text-neutral-400">Total Referrals</p><p class="text-2xl font-bold mt-1" id="dRef"></p></div>
+ </div>
+ <button onclick="go('ads')" class="btn w-full py-5 text-xl mb-4"><i class="fa-solid fa-circle-play"></i> Watch Ads &amp; Earn Now</button>
+ <div class="glass p-5"><h3 class="font-bold mb-3"><i class="fa-solid fa-link text-yellow-500"></i> Your Referral Link</h3><div class="flex gap-2"><input readonly id="rl" class="inp"><button onclick="copyRef()" class="btn px-6">Copy</button></div><p class="text-sm text-neutral-400 mt-3">Earn team commission on 3 levels (8% · 5% · 2%) once your referrals have watched 20 ads.</p></div>
+</section>
+
+<!-- ADS -->
+<section id="ads" class="view"><h2 class="text-2xl font-extrabold mb-1">Watch <span class="gold">Ads</span></h2><p class="text-sm text-neutral-400 mb-5"><span id="aTd"></span>/10 watched today · tap an ad and wait 13 seconds.</p><div id="slots" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div></section>
+
+<!-- TEAM -->
+<section id="team" class="view"><h2 class="text-2xl font-extrabold mb-4">My <span class="gold">Referrals</span></h2><div id="tree" class="space-y-4"></div></section>
+
+<!-- WITHDRAW -->
+<section id="wd" class="view"><h2 class="text-2xl font-extrabold mb-4">Withdraw <span class="gold">Funds</span></h2>
+ <div class="grid md:grid-cols-2 gap-4">
+  <div class="glass p-6"><p class="text-sm text-neutral-300">Available balance</p><p class="text-4xl font-black gold my-2" id="wBal"></p><p class="text-sm text-neutral-400">Minimum withdrawal: <b class="text-white" id="wMin"></b></p><p class="text-sm text-neutral-400 mt-2"><i class="fa-regular fa-clock text-yellow-500"></i> Payments are processed within 24 to 72 hours.</p></div>
+  <div class="glass p-6 space-y-3">
+   <select id="wM" class="inp"><option>JazzCash</option><option>Easypaisa</option></select>
+   <input id="wT" class="inp" placeholder="Account title">
+   <input id="wN" class="inp" placeholder="Account number">
+   <input id="wA" type="number" class="inp" placeholder="Amount (Rs.)">
+   <button onclick="withdraw()" class="btn w-full py-3">Request Withdrawal</button>
+  </div></div>
+ <div class="glass mt-4 overflow-x-auto"><table class="w-full text-sm min-w-[460px]"><thead class="text-neutral-400 text-left"><tr><th class="p-3">Date</th><th class="p-3">Method</th><th class="p-3">Amount</th><th class="p-3">Status</th></tr></thead><tbody id="wH"></tbody></table></div>
+</section>
+
+<!-- HISTORY -->
+<section id="hist" class="view"><h2 class="text-2xl font-extrabold mb-4">Transaction <span class="gold">History</span></h2><div class="glass overflow-x-auto"><table class="w-full text-sm min-w-[520px]"><thead class="text-neutral-400 text-left"><tr><th class="p-3">Date</th><th class="p-3">Type</th><th class="p-3">Amount</th><th class="p-3">Description</th></tr></thead><tbody id="hB"></tbody></table></div></section>
+</main>
+
+<nav id="bot" class="hidden md:!hidden fixed bottom-0 inset-x-0 z-40 glass !rounded-none grid grid-cols-5 text-center text-[11px]" style="padding-bottom:env(safe-area-inset-bottom,0px)">
+ <a class="navl py-3" data-v="dash" href="#" onclick="go('dash');return false"><i class="fa-solid fa-house block text-lg"></i>Home</a><a class="navl py-3" data-v="ads" href="#" onclick="go('ads');return false"><i class="fa-solid fa-circle-play block text-lg"></i>Ads</a><a class="navl py-3" data-v="team" href="#" onclick="go('team');return false"><i class="fa-solid fa-users block text-lg"></i>Team</a><a class="navl py-3" data-v="wd" href="#" onclick="go('wd');return false"><i class="fa-solid fa-wallet block text-lg"></i>Withdraw</a><a class="navl py-3" data-v="hist" href="#" onclick="go('hist');return false"><i class="fa-solid fa-clock-rotate-left block text-lg"></i>History</a>
+</nav>
+<a id="wa" target="_blank" rel="noopener" aria-label="WhatsApp Channel" class="hidden fixed right-4 bottom-24 md:bottom-6 z-50 w-14 h-14 rounded-full bg-green-500 grid place-items-center text-white text-3xl shadow-[0_0_24px_rgba(34,197,94,.6)]"><i class="fa-brands fa-whatsapp"></i></a>
+
+<!-- MODALS -->
+<div id="bonus" class="modal"><div class="glass p-7 max-w-sm w-full text-center bg-black"><div class="text-4xl mb-2">🎁</div><h3 class="text-xl font-extrabold mb-2">Join Our WhatsApp Channel to Claim Welcome Bonus of <span class="text-yellow-500">Rs. 50</span></h3>
+ <button onclick="joinWA()" class="w-full py-3 rounded-full bg-green-500 text-black font-bold mt-3"><i class="fa-brands fa-whatsapp"></i> Join WhatsApp Channel</button>
+ <button id="cb" disabled onclick="claimBonus()" class="btn w-full py-3 mt-3">Claim Bonus (3s)</button><button onclick="closeM('bonus')" class="text-xs text-neutral-500 mt-3">Maybe later</button></div></div>
+<div id="adM" class="modal"><div class="glass p-5 max-w-md w-full text-center bg-black"><iframe id="adF" sandbox="allow-scripts allow-popups" class="w-full h-44 rounded-xl bg-neutral-900 mb-3"></iframe>
+ <p class="text-5xl font-black gold" id="tm">00:13</p><p class="text-sm text-neutral-400 mt-2">Please wait — your reward unlocks when the timer reaches 00:00</p>
+ <button id="cl" onclick="claimAd()" class="btn w-full py-3 mt-4 hidden">Claim Reward</button><button onclick="cancelAd()" class="text-xs text-neutral-500 mt-3">Close</button></div></div>
+<div id="terms" class="modal"><div class="glass p-6 max-w-lg w-full bg-black max-h-[85vh] overflow-y-auto text-sm text-neutral-300 space-y-3"><h3 class="text-lg font-bold text-white">Terms &amp; Privacy Policy</h3>
+ <p><b>1. Eligibility.</b> One account per person and per device. Duplicate, fake or automated accounts are banned and their balance is cancelled.</p>
+ <p><b>2. Earning.</b> Ads must be watched fully. Rewards, limits and commission rates may change with notice on our channel.</p>
+ <p><b>3. Team commission.</b> Commission is credited on up to 3 levels and only after a referred member has watched 20 ads. Self-referral is not allowed.</p>
+ <p><b>4. Withdrawals.</b> Requests are reviewed and paid within 24 to 72 hours to JazzCash or Easypaisa. Incorrect account details are the user’s responsibility. Requests may be rejected for suspected fraud.</p>
+ <p><b>5. Fair use.</b> VPNs, bots, scripts or any attempt to manipulate timers or rewards lead to a permanent ban.</p>
+ <p><b>6. Privacy.</b> We store your name, email, device identifier and earning activity to run the service and prevent fraud. We never sell your personal data. Contact us through our WhatsApp channel to request deletion.</p>
+ <button onclick="closeM('terms')" class="btn w-full py-2.5">Close</button></div></div>
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 top-20 z-[70] glass px-5 py-3 text-sm hidden bg-black"></div>
+
+<script>
+/* ✏️ PASTE YOUR SUPABASE VALUES (Project Settings > API). Use the anon key only. */
+const CFG={url:'YOUR_SUPABASE_URL',key:'YOUR_SUPABASE_ANON_KEY',channel:'https://whatsapp.com/channel/0029VbDrlKV7j6g4pRrhR71u'};
+if(CFG.url.startsWith('YOUR_')){document.body.innerHTML='<div style="max-width:480px;margin:80px auto;padding:24px;font-family:system-ui;color:#fff"><h2 style="color:#eab308;font-size:22px;font-weight:800">Setup needed</h2><p style="margin-top:10px;color:#a3a3a3">Paste your Supabase Project URL and anon key into CFG at the top of this script. See SETUP.md.</p></div>';throw new Error('Supabase keys missing')}
+const sb=supabase.createClient(CFG.url,CFG.key);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rs=n=>'Rs. '+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const dt=s=>new Date(s).toLocaleDateString('en-GB');
+let P=null,SL=[],TD=0,HW=false,TEAM=[],WL=[],TX=[],mode_='l';
+$('wa').href=CFG.channel;
+const toast=t=>{const e=$('toast');e.textContent=t;e.classList.remove('hidden');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.add('hidden'),3000)};
+const openM=id=>$(id).classList.add('on'),closeM=id=>$(id).classList.remove('on');
+const dev=()=>{let d=localStorage.getItem('wae_dev');if(!d){d=crypto.randomUUID();localStorage.setItem('wae_dev',d)}return d};
+function mode(m){mode_=m;const r=m==='r';['aName','aRef'].forEach(i=>$(i).classList.toggle('hidden',!r));$('warn').classList.toggle('hidden',!r);$('tick').classList.toggle('hidden',!r);$('tick').classList.toggle('flex',r);
+ $('aGo').textContent=r?'Create Account':'Login';$('tL').className='flex-1 py-2 rounded-full '+(r?'border border-white/15':'btn');$('tR').className='flex-1 py-2 rounded-full '+(r?'btn':'border border-white/15');
+ if(r&&!$('aRef').value)$('aRef').value=new URLSearchParams(location.search).get('ref')||''}
+function go(v){document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id===v));document.querySelectorAll('.navl').forEach(a=>a.classList.toggle('act',a.dataset.v===v));scrollTo({top:0})}
+function shell(on){$('nav').classList.toggle('hidden',!on);$('nav').classList.toggle('md:flex',on);$('bot').classList.toggle('hidden',!on);$('wa').classList.toggle('hidden',!on);$('out').classList.toggle('hidden',!on)}
+async function submitAuth(){
+ const email=$('aMail').value.trim(),password=$('aPass').value;if(!email||password.length<6)return toast('Enter a valid email and a password of 6+ characters.');
+ if(mode_==='l'){const{error}=await sb.auth.signInWithPassword({email,password});if(error)return toast(error.message);return boot()}
+ const name=$('aName').value.trim();if(!name)return toast('Enter your full name.');if(!$('aTerms').checked)return toast('Please accept the Terms & Privacy Policy.');
+ const{data,error}=await sb.auth.signUp({email,password,options:{data:{name,ref:$('aRef').value.trim(),device_id:dev()}}});
+ if(error)return toast(/database error/i.test(error.message)?'Could not create account. Only one account is allowed per device.':error.message);
+ if(!data.session)return toast('Check your email to confirm your account, then log in.');boot()}
+async function logout(){await sb.auth.signOut();P=null;shell(false);go('auth')}
+const pkt0=()=>{const d=new Date(Date.now()+5*36e5);d.setUTCHours(0,0,0,0);return new Date(d-5*36e5).toISOString()};
+async function refresh(){
+ const{data:{user}}=await sb.auth.getUser();if(!user)return false;
+ const[p,t,s,c,w,tm]=await Promise.all([sb.from('profiles').select('*').eq('id',user.id).single(),sb.from('transactions').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(100),sb.from('ad_slots').select('*').eq('active',true),sb.from('ad_views').select('id',{count:'exact',head:true}).eq('user_id',user.id).eq('claimed',true).gte('claimed_at',pkt0()),sb.from('withdrawals').select('*').eq('user_id',user.id).order('created_at',{ascending:false}),sb.rpc('my_team')]);
+ P=p.data;TX=t.data||[];SL=s.data||[];TD=c.count||0;WL=w.data||[];TEAM=tm.data||[];HW=WL.some(x=>x.status!=='rejected');paint();return true}
+function paint(){
+ $('dName').textContent=P.name.split(' ')[0];$('dId').textContent=P.user_code;$('dBal').textContent=rs(P.balance);$('dTd').textContent=TD;$('aTd').textContent=TD;$('dBar').style.width=TD*10+'%';
+ $('dRef').textContent=TEAM.filter(x=>x.lvl>0).length;$('rl').value=location.origin+location.pathname+'?ref='+P.user_code;
+ $('wBal').textContent=rs(P.balance);$('wMin').textContent=HW?'Rs. 800':'Rs. 200';
+ $('slots').innerHTML=SL.length?SL.slice(0,10).map((s,i)=>`<button onclick="startAd('${s.id}')" class="glass overflow-hidden text-left hover:-translate-y-1 transition ${TD>=10?'opacity-40 pointer-events-none':''}"><div class="h-24 grid place-items-center text-3xl bg-gradient-to-br from-yellow-500/30 to-orange-600/20"><i class="fa-solid fa-rectangle-ad"></i></div><div class="p-3"><p class="font-semibold text-sm">${esc(s.title)}</p><p class="text-xs text-yellow-500">+ Rs. 4.50</p></div></button>`).join(''):'<p class="col-span-full text-center text-neutral-400 py-10">No ads available right now. Please check back soon.</p>';
+ const lv=n=>TEAM.filter(x=>x.lvl===n);const up=lv(0)[0];
+ $('tree').innerHTML=`<div class="glass p-5 text-center"><p class="text-xs uppercase tracking-widest text-neutral-500 mb-2">Upline</p>${up?`<b>${esc(up.name)}</b> <span class="text-neutral-500 text-xs">${esc(up.user_code)}</span>`:'<span class="text-neutral-500 text-sm">No upline</span>'}</div><div class="text-center"><span class="inline-block px-5 py-2 rounded-2xl bg-yellow-500 text-black font-bold">You · ${esc(P.user_code)}</span></div>`+[1,2,3].map(n=>`<div class="glass p-5"><p class="text-xs uppercase tracking-widest text-neutral-500 mb-3">Level ${n} · ${['8%','5%','2%'][n-1]} commission · ${lv(n).length} member(s)</p><div class="flex flex-wrap gap-2">${lv(n).map(m=>`<span class="glass px-3 py-1.5 text-sm">${esc(m.name)} <span class="text-neutral-500 text-xs">${m.ads_total}/20 ads</span></span>`).join('')||'<span class="text-neutral-500 text-sm">No members yet</span>'}</div></div>`).join('');
+ $('wH').innerHTML=WL.map(w=>`<tr class="border-t border-white/5"><td class="p-3">${dt(w.created_at)}</td><td class="p-3">${esc(w.method)}</td><td class="p-3">${rs(w.amount)}</td><td class="p-3 capitalize ${w.status==='approved'?'text-green-400':w.status==='rejected'?'text-red-400':'text-yellow-500'}">${w.status}</td></tr>`).join('')||'<tr><td colspan="4" class="p-4 text-neutral-500">No withdrawals yet.</td></tr>';
+ $('hB').innerHTML=TX.map(x=>`<tr class="border-t border-white/5"><td class="p-3">${dt(x.created_at)}</td><td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs ${x.type==='credit'?'bg-green-500/15 text-green-400':'bg-red-500/15 text-red-400'}">${x.type==='credit'?'Credit':'Debit'}</span></td><td class="p-3 font-bold ${x.type==='credit'?'text-yellow-500':'text-red-400'}">${x.type==='credit'?'+':'-'}${rs(x.amount)}</td><td class="p-3 text-neutral-300">${esc(x.description)}</td></tr>`).join('')}
+async function boot(){if(!await refresh())return;shell(true);go('dash');if(!P.bonus_claimed)setTimeout(()=>openM('bonus'),400)}
+function copyRef(){navigator.clipboard.writeText($('rl').value).then(()=>toast('Referral link copied ✓')).catch(()=>toast('Press and hold the link to copy.'))}
+/* welcome bonus: joining can't be verified by WhatsApp, so the bonus is a one-time server-side credit after the button + 3s */
+let joined=false;function joinWA(){window.open(CFG.channel,'_blank','noopener');if(joined)return;joined=true;let n=3;const b=$('cb');b.textContent=`Claim Bonus (${n}s)`;const t=setInterval(()=>{n--;if(n>0)b.textContent=`Claim Bonus (${n}s)`;else{clearInterval(t);b.textContent='Claim Bonus';b.disabled=false}},1000)}
+async function claimBonus(){const{error}=await sb.rpc('claim_bonus');if(error)return toast(error.message);closeM('bonus');toast('Rs. 50 welcome bonus added 🎉');refresh()}
+/* ads: the 13s rule is enforced again on the server */
+let vid=null,adT=null;
+async function startAd(id){const s=SL.find(x=>x.id===id);const{data,error}=await sb.rpc('start_ad',{p_slot:id});if(error)return toast(error.message);vid=data;
+ const f=$('adF');f.removeAttribute('src');f.removeAttribute('srcdoc');s.kind==='url'?f.src=s.content:f.srcdoc=s.content;
+ $('cl').classList.add('hidden');openM('adM');let n=13;const d=()=>$('tm').textContent='00:'+String(n).padStart(2,'0');d();clearInterval(adT);
+ adT=setInterval(()=>{n--;d();if(n<=0){clearInterval(adT);setTimeout(()=>$('cl').classList.remove('hidden'),600)}},1000)}
+function cancelAd(){clearInterval(adT);closeM('adM');$('adF').srcdoc=''}
+async function claimAd(){const{error}=await sb.rpc('claim_ad',{p_view:vid});if(error){toast(error.message);return cancelAd()}cancelAd();toast('Rs. 4.50 added to your balance ✓');refresh()}
+async function withdraw(){const{error}=await sb.rpc('request_withdraw',{p_method:$('wM').value,p_title:$('wT').value,p_number:$('wN').value,p_amount:+$('wA').value});
+ if(error)return toast(error.message);['wT','wN','wA'].forEach(i=>$(i).value='');toast('Withdrawal request submitted ✓');refresh()}
+mode('l');
+sb.auth.getSession().then(({data})=>{if(data.session)boot()});
+</script>
+</body>
+</html>

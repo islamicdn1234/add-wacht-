@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Admin</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{background:#050505;color:#f5f5f5;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.glass{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:1rem}
+.btn{background:linear-gradient(135deg,#fde047,#eab308);color:#111;font-weight:700;border-radius:999px;padding:.55rem 1.1rem;font-size:.85rem}
+.sm{padding:.3rem .8rem;font-size:.75rem}
+.ghost{border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:.3rem .8rem;font-size:.75rem}.ghost:hover{border-color:#eab308}
+.danger{border-color:rgba(248,113,113,.5);color:#f87171}
+.inp{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:.7rem;padding:.65rem .9rem;color:#fff;outline:none}.inp:focus{border-color:#eab308}.inp option{background:#111}
+.tab{padding:.45rem 1rem;border-radius:999px;border:1px solid rgba(255,255,255,.15);font-size:.85rem}.tab.on{background:#eab308;color:#111;font-weight:700;border-color:#eab308}
+.pane{display:none}.pane.on{display:block}
+</style>
+</head>
+<body>
+<div id="loginBox" class="max-w-sm mx-auto mt-24 px-4"><div class="glass p-7 space-y-3">
+ <h1 class="text-xl font-extrabold">Admin Login</h1>
+ <input id="lEmail" type="email" class="inp" placeholder="Email" autocomplete="username">
+ <input id="lPass" type="password" class="inp" placeholder="Password" autocomplete="current-password">
+ <button class="btn w-full" data-a="login">Login</button>
+ <p class="text-center text-sm"><a href="#" class="text-yellow-500" data-a="forgot">Forgot password?</a></p>
+ <p id="lErr" class="text-sm text-red-400"></p>
+</div></div>
+
+<div id="recBox" class="hidden max-w-sm mx-auto mt-24 px-4"><div class="glass p-7 space-y-3">
+ <h1 class="text-xl font-extrabold">Set new password</h1>
+ <input id="r1" type="password" class="inp" placeholder="New password"><input id="r2" type="password" class="inp" placeholder="Confirm password">
+ <button class="btn w-full" data-a="setPw">Save password</button></div></div>
+
+<div id="app" class="hidden max-w-6xl mx-auto px-4 py-6">
+ <div class="flex items-center justify-between mb-5"><h1 class="text-xl font-extrabold">Admin Panel</h1><div class="flex gap-2"><button class="ghost" data-a="reload">Refresh</button><button class="ghost" data-a="logout">Logout</button></div></div>
+ <div id="maintBanner" class="hidden mb-4 rounded-xl border border-red-500/40 bg-red-500/10 text-red-300 text-sm p-3">⚠ Maintenance mode is ON. Users cannot earn or withdraw.</div>
+ <div id="stats" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5 text-center"></div>
+ <div class="flex flex-wrap gap-2 mb-4">
+  <button class="tab on" data-a="tab" data-t="w">Withdrawals</button><button class="tab" data-a="tab" data-t="u">Users</button><button class="tab" data-a="tab" data-t="a">Ads</button><button class="tab" data-a="tab" data-t="s">Settings</button><button class="tab" data-a="tab" data-t="c">My Account</button>
+ </div>
+
+ <div class="pane on" id="p-w">
+  <div class="flex flex-wrap gap-2 mb-3"><button class="tab on" id="fP" data-a="filt" data-f="pending">Pending</button><button class="tab" id="fA" data-a="filt" data-f="all">All</button><span id="uf" class="text-sm text-yellow-500 self-center"></span></div>
+  <div class="glass overflow-x-auto"><table class="w-full text-sm min-w-[860px]"><thead class="text-neutral-400 text-left"><tr><th class="p-3">Date</th><th class="p-3">User</th><th class="p-3">Method</th><th class="p-3">Account title</th><th class="p-3">Account no.</th><th class="p-3">Amount</th><th class="p-3">Status</th><th class="p-3">Actions</th></tr></thead><tbody id="wB"></tbody></table></div>
+ </div>
+
+ <div class="pane" id="p-u"><input id="q" class="inp mb-3" placeholder="Search by name or user ID…">
+  <div class="glass overflow-x-auto"><table class="w-full text-sm min-w-[860px]"><thead class="text-neutral-400 text-left"><tr><th class="p-3">Name</th><th class="p-3">User ID</th><th class="p-3">Balance</th><th class="p-3">Ads</th><th class="p-3">Status</th><th class="p-3">Joined</th><th class="p-3">Actions</th></tr></thead><tbody id="uB"></tbody></table></div></div>
+
+ <div class="pane" id="p-a">
+  <div class="glass p-5 mb-4 space-y-3"><p class="font-semibold" id="adHead">Add ad</p>
+   <div class="grid md:grid-cols-3 gap-3"><input id="aT" class="inp" placeholder="Title"><select id="aK" class="inp"><option value="html">HTML / script code</option><option value="url">Page URL</option></select><label class="flex items-center gap-2 text-sm"><input id="aOn" type="checkbox" checked class="accent-yellow-500"> Active</label></div>
+   <textarea id="aC" rows="4" class="inp font-mono text-xs" placeholder="Paste your ad network code or URL"></textarea>
+   <div class="flex gap-2"><button class="btn" data-a="saveAd">Save Ad</button><button class="ghost" data-a="cancelAd">Cancel edit</button></div></div>
+  <div class="glass overflow-x-auto"><table class="w-full text-sm min-w-[640px]"><thead class="text-neutral-400 text-left"><tr><th class="p-3">Title</th><th class="p-3">Type</th><th class="p-3">Content</th><th class="p-3">Status</th><th class="p-3">Actions</th></tr></thead><tbody id="aB"></tbody></table></div>
+ </div>
+
+ <div class="pane" id="p-s">
+  <div class="glass p-5 mb-4"><div id="setF" class="grid md:grid-cols-3 gap-3"></div><button class="btn mt-4" data-a="saveSet">Save Settings</button></div>
+  <div class="glass p-5 mb-4 flex flex-wrap items-center justify-between gap-3"><div><p class="font-semibold">Maintenance mode</p><p class="text-xs text-neutral-400">When ON, users can log in but cannot watch ads, claim bonuses or withdraw.</p></div><button class="btn" id="mBtn" data-a="maint"></button></div>
+  <div class="glass p-5 border-red-500/30"><p class="font-semibold text-red-400 mb-3">Danger zone</p><div class="flex flex-wrap gap-3"><button class="ghost danger" data-a="resetAds">Reset all ad history (everyone can watch again)</button><button class="ghost danger" data-a="resetAll">Reset ALL data (delete all users)</button></div></div>
+ </div>
+
+ <div class="pane" id="p-c"><div class="glass p-5 max-w-md space-y-3"><p class="font-semibold">Change my password</p><input id="c0" type="password" class="inp" placeholder="Current password"><input id="c1" type="password" class="inp" placeholder="New password"><input id="c2" type="password" class="inp" placeholder="Confirm new password"><button class="btn" data-a="chPw">Update Password</button></div></div>
+</div>
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 top-6 glass px-5 py-3 text-sm hidden bg-black z-50"></div>
+
+<script>
+/* ✏️ PASTE YOUR SUPABASE VALUES (anon key only). Only a user marked is_admin can use this page. */
+const CFG={url:'YOUR_SUPABASE_URL',key:'YOUR_SUPABASE_ANON_KEY'};
+if(CFG.url.startsWith('YOUR_')){document.body.innerHTML='<div style="max-width:480px;margin:80px auto;padding:24px;color:#fff;font-family:system-ui"><h2 style="color:#eab308;font-size:22px;font-weight:800">Setup needed</h2><p style="margin-top:10px;color:#a3a3a3">Paste your Supabase Project URL and anon key into CFG at the top of this script.</p></div>';throw new Error('keys missing')}
+const sb=supabase.createClient(CFG.url,CFG.key);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rs=n=>'Rs. '+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const dt=s=>new Date(s).toLocaleString('en-GB',{dateStyle:'short',timeStyle:'short'});
+let U=[],W=[],S=[],ST={},F='pending',UF=null,EDIT=null;
+const toast=t=>{const e=$('toast');e.textContent=t;e.classList.remove('hidden');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.add('hidden'),3200)};
+const who=id=>U.find(x=>x.id===id)||{};
+const must=r=>{if(r.error)throw new Error(r.error.message);return r};
+const SETF=[['reward','Reward per ad (Rs.)'],['timer_seconds','Ad timer (seconds)'],['daily_limit','Daily ads limit per user'],['min_first','First withdrawal minimum (Rs.)'],['min_next','Later withdrawal minimum (Rs.)'],['welcome_bonus','Welcome bonus (Rs.)'],['c1','Level 1 commission %'],['c2','Level 2 commission %'],['c3','Level 3 commission %'],['ref_threshold','Ads a referral must watch first']];
+
+const A={
+ async login(){$('lErr').textContent='';const{error}=await sb.auth.signInWithPassword({email:$('lEmail').value.trim(),password:$('lPass').value});if(error)return $('lErr').textContent='Invalid email or password.';await init()},
+ async logout(){await sb.auth.signOut();location.reload()},
+ async forgot(){const e=$('lEmail').value.trim();if(!e)return toast('Enter your email first.');const{error}=await sb.auth.resetPasswordForEmail(e,{redirectTo:location.origin+location.pathname});toast(error?error.message:'Reset link sent. Check your email.')},
+ async setPw(){const p=$('r1').value;if(p.length<6||p!==$('r2').value)return toast('Passwords must match (6+ characters).');must(await sb.auth.updateUser({password:p}));history.replaceState(null,'',location.pathname);toast('Password updated ✓');$('recBox').classList.add('hidden');await init()},
+ async chPw(){const{data:{user}}=await sb.auth.getUser();const n=$('c1').value;if(n.length<6||n!==$('c2').value)return toast('New passwords must match (6+ characters).');
+  if((await sb.auth.signInWithPassword({email:user.email,password:$('c0').value})).error)return toast('Current password is wrong.');must(await sb.auth.updateUser({password:n}));['c0','c1','c2'].forEach(i=>$(i).value='');toast('Password changed ✓')},
+ reload(){return load()},
+ tab(d){document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+d.t));document.querySelectorAll('[data-a=tab]').forEach(b=>b.classList.toggle('on',b.dataset.t===d.t))},
+ filt(d){F=d.f;$('fP').classList.toggle('on',F==='pending');$('fA').classList.toggle('on',F==='all');drawW()},
+ userW(d){UF=d.id;F='all';A.tab({t:'w'});A.filt({f:'all'})},
+ clearUF(){UF=null;drawW()},
+ async review(d){if(!confirm(d.ok?'Approve? Do this only AFTER you have sent the money.':'Reject and refund the balance to the user?'))return;must(await sb.rpc('admin_review',{p_id:d.id,p_approve:d.ok==='1'}));toast('Done ✓');await load()},
+ async editW(d){const w=W.find(x=>x.id===d.id);const m=prompt('Method (JazzCash or Easypaisa)',w.method);if(!m)return;const t=prompt('Account title',w.account_title);if(!t)return;const n=prompt('Account number',w.account_number);if(!n)return;must(await sb.rpc('admin_edit_withdrawal',{p_id:d.id,p_method:m,p_title:t,p_number:n}));toast('Updated ✓');await load()},
+ async delW(d){if(!confirm('Delete this withdrawal record? A pending one is refunded to the user.'))return;must(await sb.rpc('admin_delete_withdrawal',{p_id:d.id}));toast('Deleted ✓');await load()},
+ async block(d){const b=d.b==='1';if(!confirm((b?'Block':'Unblock')+' this user?'))return;must(await sb.rpc('admin_set_blocked',{p_id:d.id,p_blocked:b}));toast(b?'User blocked':'User unblocked');await load()},
+ async del(d){if(!confirm('PERMANENTLY delete this user and all their data (ads, transactions, withdrawals)?'))return;must(await sb.rpc('admin_delete_user',{p_id:d.id}));toast('User deleted');await load()},
+ async pw(d){const p=prompt('Set a temporary password for this user (6+ characters). Tell them to change it after login.');if(!p)return;must(await sb.rpc('admin_set_password',{p_id:d.id,p_pass:p}));toast('Password set ✓')},
+ editAd(d){const s=S.find(x=>x.id===d.id);EDIT=s.id;$('aT').value=s.title;$('aK').value=s.kind;$('aC').value=s.content;$('aOn').checked=s.active;$('adHead').textContent='Edit ad';A.tab({t:'a'});scrollTo({top:0,behavior:'smooth'})},
+ cancelAd(){EDIT=null;$('aT').value=$('aC').value='';$('aOn').checked=true;$('adHead').textContent='Add ad'},
+ async saveAd(){const row={title:$('aT').value.trim(),kind:$('aK').value,content:$('aC').value.trim(),active:$('aOn').checked};if(!row.title||!row.content)return toast('Enter a title and the ad code/URL.');
+  must(EDIT?await sb.from('ad_slots').update(row).eq('id',EDIT):await sb.from('ad_slots').insert(row));toast(EDIT?'Ad updated ✓':'Ad added ✓');A.cancelAd();await load()},
+ async togAd(d){must(await sb.from('ad_slots').update({active:d.on==='1'}).eq('id',d.id));await load()},
+ async delAd(d){if(!confirm('Delete this ad?'))return;must(await sb.from('ad_slots').delete().eq('id',d.id));await load()},
+ async saveSet(){const rows=SETF.map(([k])=>({key:k,value:String($('s_'+k).value)}));if(rows.some(r=>r.value===''||isNaN(+r.value)||+r.value<0))return toast('All settings must be valid numbers.');must(await sb.from('settings').upsert(rows));toast('Settings saved ✓');await load()},
+ async maint(){const on=ST.maintenance!=='on';if(!confirm(on?'Turn maintenance ON? Users will be locked out of earning.':'Turn maintenance OFF?'))return;must(await sb.from('settings').upsert({key:'maintenance',value:on?'on':'off'}));await load()},
+ async resetAds(){if(!confirm('Clear ALL ad watch history? Everyone can watch every ad again.'))return;must(await sb.rpc('admin_reset_ads'));toast('Ad history cleared ✓');await load()},
+ async resetAll(){if(!confirm('This DELETES ALL USERS, balances, transactions and withdrawals. Admin and ads/settings stay. Continue?'))return;if(prompt('Type RESET to confirm')!=='RESET')return toast('Cancelled.');must(await sb.rpc('admin_reset_all',{p_confirm:'RESET'}));toast('All data reset ✓');await load()}
+};
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;e.preventDefault();try{await A[b.dataset.a](b.dataset)}catch(x){console.error(x);toast(x.message||String(x))}});
+$('q').addEventListener('input',drawU);
+
+async function init(){
+ const{data:{user}}=await sb.auth.getUser();if(!user)return;
+ const{data:me}=await sb.from('profiles').select('is_admin').eq('id',user.id).single();
+ if(!me||!me.is_admin){await sb.auth.signOut();$('lErr').textContent='Access denied.';return}
+ $('loginBox').classList.add('hidden');$('app').classList.remove('hidden');await load()}
+async function load(){
+ const[u,w,s,st,stt]=await Promise.all([sb.from('profiles').select('*').order('created_at',{ascending:false}),sb.from('withdrawals').select('*').order('created_at',{ascending:false}),sb.from('ad_slots').select('*').order('title'),sb.from('settings').select('*'),sb.rpc('admin_stats')]);
+ U=u.data||[];W=w.data||[];S=s.data||[];ST={};(st.data||[]).forEach(r=>ST[r.key]=r.value);
+ if(stt.error)toast('Stats error: '+stt.error.message+' (did you run update.sql?)');
+ const k=stt.data||{};const c=(l,v,x='')=>`<div class="glass p-4"><p class="text-xs text-neutral-400">${l}</p><p class="text-xl font-bold ${x}">${v}</p></div>`;
+ $('stats').innerHTML=c('Total users',k.users??'-')+c('Active today',k.active_today??'-','text-green-400')+c('Joined today',k.joined_today??'-','text-green-400')+c('Today earnings',rs(k.earn_today||0),'text-yellow-500')+c('Total earnings',rs(k.earn_total||0),'text-yellow-500')+c('User balances',rs(k.balances||0))+c('Pending requests',(k.pending_count??'-')+' · '+rs(k.pending_amount||0),'text-yellow-500')+c('Total paid out',rs(k.paid_total||0));
+ $('maintBanner').classList.toggle('hidden',ST.maintenance!=='on');$('mBtn').textContent=ST.maintenance==='on'?'Turn OFF':'Turn ON';
+ $('setF').innerHTML=SETF.map(([k,l])=>`<label class="text-xs text-neutral-400">${l}<input id="s_${k}" type="number" step="any" class="inp mt-1 text-white" value="${esc(ST[k]??'')}"></label>`).join('');
+ drawW();drawU();drawA()}
+function drawW(){
+ $('uf').innerHTML=UF?`Showing: ${esc(who(UF).name)} <a href="#" class="underline" data-a="clearUF">show all users</a>`:'';
+ const rows=W.filter(x=>(F==='all'||x.status==='pending')&&(!UF||x.user_id===UF));
+ $('wB').innerHTML=rows.map(w=>{const u=who(w.user_id);return `<tr class="border-t border-white/5"><td class="p-3 whitespace-nowrap">${dt(w.created_at)}</td><td class="p-3">${esc(u.name)}<br><span class="text-xs text-neutral-500">${esc(u.user_code)}</span></td><td class="p-3">${esc(w.method)}</td><td class="p-3">${esc(w.account_title)}</td><td class="p-3 font-mono">${esc(w.account_number)}</td><td class="p-3 font-bold text-yellow-500">${rs(w.amount)}</td><td class="p-3 capitalize ${w.status==='approved'?'text-green-400':w.status==='rejected'?'text-red-400':'text-yellow-500'}">${w.status}</td><td class="p-3 whitespace-nowrap space-x-1">${w.status==='pending'?`<button class="btn sm" data-a="review" data-id="${w.id}" data-ok="1">Approve</button><button class="ghost" data-a="review" data-id="${w.id}" data-ok="0">Reject</button>`:''}<button class="ghost" data-a="editW" data-id="${w.id}">Edit</button><button class="ghost danger" data-a="delW" data-id="${w.id}">Delete</button></td></tr>`}).join('')||'<tr><td colspan="8" class="p-4 text-neutral-500">Nothing here.</td></tr>'}
+function drawU(){const q=$('q').value.toLowerCase();
+ $('uB').innerHTML=U.filter(x=>!q||x.name.toLowerCase().includes(q)||x.user_code.toLowerCase().includes(q)).map(x=>`<tr class="border-t border-white/5"><td class="p-3">${esc(x.name)}${x.is_admin?' <span class="text-xs text-yellow-500">admin</span>':''}</td><td class="p-3">${esc(x.user_code)}</td><td class="p-3">${rs(x.balance)}</td><td class="p-3">${x.ads_total}</td><td class="p-3 ${x.blocked?'text-red-400':'text-green-400'}">${x.blocked?'Blocked':'Active'}</td><td class="p-3 whitespace-nowrap">${dt(x.created_at)}</td><td class="p-3 whitespace-nowrap space-x-1">${x.is_admin?'':`<button class="ghost" data-a="userW" data-id="${x.id}">Withdrawals</button><button class="ghost" data-a="block" data-id="${x.id}" data-b="${x.blocked?0:1}">${x.blocked?'Unblock':'Block'}</button><button class="ghost" data-a="pw" data-id="${x.id}">Set password</button><button class="ghost danger" data-a="del" data-id="${x.id}">Delete</button>`}</td></tr>`).join('')}
+function drawA(){
+ $('aB').innerHTML=S.map(s=>`<tr class="border-t border-white/5"><td class="p-3">${esc(s.title)}</td><td class="p-3">${s.kind}</td><td class="p-3 max-w-xs truncate font-mono text-xs text-neutral-400">${esc(s.content)}</td><td class="p-3 ${s.active?'text-green-400':'text-neutral-500'}">${s.active?'Active':'Off'}</td><td class="p-3 whitespace-nowrap space-x-1"><button class="ghost" data-a="editAd" data-id="${s.id}">Edit</button><button class="ghost" data-a="togAd" data-id="${s.id}" data-on="${s.active?0:1}">${s.active?'Turn off':'Turn on'}</button><button class="ghost danger" data-a="delAd" data-id="${s.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="5" class="p-4 text-neutral-500">No ads yet.</td></tr>'}
+sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){$('loginBox').classList.add('hidden');$('recBox').classList.remove('hidden')}});
+sb.auth.getSession().then(({data})=>{if(data.session&&!location.hash.includes('type=recovery'))init()});
+</script>
+</body>
+</html>
